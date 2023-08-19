@@ -17,6 +17,7 @@ import { usePathname, useRouter } from "next/navigation"
 
 // import { updateUser } from "@/lib/actions/user.actions"
 import { ThreadValidation } from "@/lib/validations/thread"
+import { createThread } from "@/lib/actions/thread.action"
 
 interface Props {
     user : {
@@ -34,9 +35,17 @@ function PostThread({userId} : {userId: string}) {
     const router = useRouter()
     const pathname = usePathname()
 
-    const onSubmit = async () => {
+    const onSubmit = async (values: z.infer<typeof ThreadValidation>) => {
+        await createThread({
+            text: values.thread,
+            author: userId,
+            communityId: null,
+            path: pathname
+        })
 
+        router.push('/')
     }
+
     const form = useForm({
         resolver: zodResolver(ThreadValidation),
         defaultValues: {
@@ -49,7 +58,7 @@ function PostThread({userId} : {userId: string}) {
         <Form {...form}>
             <form 
                 onSubmit={form.handleSubmit(onSubmit)} 
-                className="flex flex-col gap-10 justify-start"
+                className="flex flex-col gap-10 justify-start mt-10"
             >
                 <FormField
                     control={form.control}
