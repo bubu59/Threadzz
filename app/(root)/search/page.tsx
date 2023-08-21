@@ -1,13 +1,6 @@
-"use server"
-
 import UserCard from "@/components/cards/UserCard"
-import ThreadsTabs from "@/components/shared/ThreadsTabs"
-import { profileTabs } from "@/constants"
-import { fetchUser, fetchUsers } from "@/lib/actions/user.actions"
+import { fetchUsers } from "@/lib/actions/user.actions"
 import { currentUser } from "@clerk/nextjs"
-import Image from "next/image"
-import { redirect } from "next/navigation"
-import { resourceLimits } from "worker_threads"
 
 async function Page() {
     const user = await currentUser()
