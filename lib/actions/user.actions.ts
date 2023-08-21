@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import User from "../models/user.model"
 import { connectToDB } from "../mongoose"
 import Thread from "../models/thread.model"
+import { FilterQuery, SortOrder } from "mongoose"
 
 interface Params {
     userId: string,
@@ -81,6 +82,64 @@ export async function fetchUserPosts(userId: string) {
                 
     } catch (error:any) {
         throw new Error(`Failed to fetch user posts: ${error.message}`)
+    }
+}
+
+export async function fetchUsers({
+    userId,
+    searchString = "",
+    pageNumber = 1,
+    pageSize = 20,
+    sortBy = "desc"
+} : {
+    userId: string,
+    searchString?: string,
+    pageNumber?: number,
+    pageSize?: number,
+    sortBy?: SortOrder
+}) {    
+    try {
+        connectToDB()
+
+        const skipAmount = (pageNumber - 1) * pageSize
+        
+        //does a case-insensitive search 
+        const regex = new RegExp(searchString, "i")
+
+        //selects the documents that does not equal to the specified field
+        const query: FilterQuery<typeof User> = {
+            id: { $ne: userId}
+        }
+
+        //selects documents that fulfill either requirements
+        if(searchString.trim() !== '') {
+            query.$or = [
+                { username: { $regex: regex}},
+                { name: { $regex: regex}}
+            ]
+        }
+
+        //sort by time of creation of documents
+        const sortOptions = { createdAt: sortBy}
+
+        //the overall strucutre of the query 
+        const userQuery = User.find(query)
+            .sort(sortOptions)
+            .skip(skipAmount)
+            .limit(pageSize)
+        
+        //counts total no. of User documents, ie no. of users based on query
+        const totalUsersCount = await User.countDocuments(query)
+
+        //executes search function for query
+        const users = await userQuery.exec()
+
+        const isNext = totalUsersCount > skipAmount + users.length
+
+        return { users, isNext}
+
+    } catch (error:any) {
+        throw new Error(`Failed to fetch users: ${error.message}`)
     }
 }
 
